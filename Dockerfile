@@ -1,25 +1,23 @@
-# 1. Image de base versionnée (Fix DL3006)
+# Image versionnée spécifiquement (Bonne pratique Hadolint)
 FROM nginx:1.25.3-alpine
 
-# 2. Création d'un utilisateur non-root pour la sécurité
+# Création d'un utilisateur non-root
 RUN addgroup -g 1000 -S appgroup && \
     adduser -u 1000 -S appuser -G appgroup
 
-# 3. Installation minimale et nettoyage
+# Installation minimale
 RUN apk add --no-cache ca-certificates && rm -rf /var/cache/apk/*
 
-# 4. Préparation des droits pour Nginx (dossiers de cache et PID)
-RUN touch /var/run/nginx.pid && \
-    chown -R appuser:appgroup /var/run/nginx.pid /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
-
-# 5. Copie des fichiers avec changement de propriétaire
+# Copie avec changement de propriétaire
 COPY --chown=appuser:appgroup nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chown=appuser:appgroup src/ /usr/share/nginx/html/
 
-# 6. Passage en utilisateur restreint
-USER appuser
+# Permissions pour le mode non-root
+RUN touch /var/run/nginx.pid && \
+    chown -R appuser:appgroup /var/run/nginx.pid /var/cache/nginx /usr/share/nginx/html
 
-# Port 8080 requis car l'utilisateur non-root ne peut pas ouvrir le port 80
+# Passage en utilisateur restreint
+USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
