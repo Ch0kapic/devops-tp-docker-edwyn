@@ -1,16 +1,10 @@
-name: Build and Push Docker Image
+name: Build and Push Secure Docker Image
 
 on:
   push:
     branches: [ main ]
-    tags:
-      - 'v*'
   pull_request:
     branches: [ main ]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -18,25 +12,33 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write # Requis pour Trivy
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Étape de Linting (Sécurité du Dockerfile)
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v4
+      # Build de l'image locale pour le scan
+      - name: Build image locally
+        uses: docker/build-push-action@v4
         with:
+<<<<<<< HEAD
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
@@ -44,16 +46,25 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-
+=======
+          context: .
+          push: false
+          tags: local-image:test
+>>>>>>> 58e7ce3 (TP2: Securisation Docker et CI/CD)
 
-      - name: Build and push Docker image
+      # Scan de vulnérabilités avec Trivy
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'local-image:test'
+          format: 'table'
+          exit-code: '1' # Bloque le build si des failles sont trouvées
+          severity: 'CRITICAL,HIGH'
+
+      # Push final si les scans sont OK
+      - name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Image digest
-        run: echo ${{ steps.meta.outputs.digest }}
+          tags: ghcr.io/${{ github.repository }}:latest
