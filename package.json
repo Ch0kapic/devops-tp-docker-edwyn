@@ -1,0 +1,15 @@
+{
+  "name": "devops-tp-docker",
+  "version": "1.0.0",
+  "description": "TP DevSecOps avec Docker",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "express": "4.17.1",
+    "lodash": "4.17.20"
+  },
+  "devDependencies": {
+    "eslint": "7.32.0"
+  }
+}
