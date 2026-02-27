@@ -1,4 +1,4 @@
-FROM nginx:1.25.3-alpine
+FROM nginx:1.29.5-alpine
 
 # Création utilisateur non-root
 RUN addgroup -g 1001 -S appgroup && \
