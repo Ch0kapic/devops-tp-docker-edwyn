@@ -25,16 +25,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
+      - name: Build, Scan and Push
         run: |
-          # Correction magique de la majuscule
+          # On définit le nom en minuscules
           LOWER_REPO=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           
-          echo "Construction de l'image pour : $LOWER_REPO"
+          # 1. Construction
           docker build -t $LOWER_REPO:latest .
           
-          # Scan Trivy (affiche les résultats sans bloquer)
-          docker run --rm aquasecurity/trivy image --severity CRITICAL $LOWER_REPO:latest
+          # 2. Scan de sécurité (Correction du nom de l'image)
+          docker run --rm aquasec/trivy image --severity CRITICAL $LOWER_REPO:latest
           
-          # Envoi vers GitHub Packages
+          # 3. Envoi sur GitHub
           docker push $LOWER_REPO:latest
