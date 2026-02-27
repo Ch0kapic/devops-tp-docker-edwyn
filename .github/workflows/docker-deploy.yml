@@ -17,7 +17,7 @@ jobs:
 
       # Analyse Statique (Lint)
       - name: Run Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
           ignore: DL3018 # Ignore les versions de paquets APK pour simplifier
